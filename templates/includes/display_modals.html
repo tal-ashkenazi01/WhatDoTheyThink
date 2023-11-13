@@ -1,0 +1,33 @@
+<style>
+  .modal-content {
+    background-color: #212121;
+    justify-content: center;
+  }
+</style>
+
+<!-- More Info -->
+<div class="modal fade" id="Modal-MoreInfo-{{query.query_id}}"
+     tabindex="-1"
+     aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header justify-content-center">
+        <h5 class="modal-title" id="ModalLabel">
+          {{ query.game }}
+        </h5>
+      </div>
+      <div class="modal-body d-flex justify-content-center" id="graph-location-{{query.query_id}}">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+                data-dismiss="modal">Close
+        </button>
+      </div>
+    </div>
+  </div>
+  <script>
+    let plotData{{query.query_id}} = {{ query.results|safe }};
+    Plotly.newPlot('graph-location-{{query.query_id}}', plotData{{query.query_id}}.data, plotData{{query.query_id}}.layout, plotData{{query.query_id}}.config);
+  </script>
+</div>
+

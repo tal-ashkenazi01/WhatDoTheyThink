@@ -1,0 +1,49 @@
+{% extends 'template.html' %}
+{% block title %}
+Previous Searches
+{% endblock %}
+{% block content %}
+
+<div class="row" style="margin-top:20px; margin-left:20px; margin-right:20px">
+   <div class="col">
+      <h2 style="text-align:center">
+          Search history
+      </h2>
+       <p style="text-align:center">
+           Click on one to see the results
+       </p>
+       <br>
+      <table>
+         <table class="table table-hover table-dark" style="text-align:center">
+            <thead>
+               <tr>
+                  <!-- Your Columns HERE -->
+                  <th scope="col">ID</th>
+                  <th scope="col">Date</th>
+                  <th scope="col">Game</th>
+                  <th scope="col">App ID</th>
+                  <th scope="col">Results</th>
+               </tr>
+            </thead>
+            <tbody>
+               <!-- Your rows inside the table HERE: -->
+               {% for query in queries %} <!-- you can write a logic code within the jinja format-->
+               {% include 'includes/display_modals.html' %}
+               <tr>
+                  <td>{{ query.query_id }}</td>
+                  <td>{{ query.date }}</td>
+                  <td>{{ query.game }}</td>
+                  <td>{{ query.app_id }}</td>
+                  <td>
+                     <button class="btn btn-outline btn-info" data-toggle="modal" data-target="#Modal-MoreInfo-{{query.query_id}}">
+                     More Info
+                     </button>
+                  </td>
+               </tr>
+               {% endfor %}
+            </tbody>
+         </table>
+      </table>
+   </div>
+</div>
+{% endblock %}

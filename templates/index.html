@@ -1,0 +1,21 @@
+{% extends 'template.html' %}
+{% block title %}
+    Home Page
+{% endblock %}
+{% block content %}
+    <div class="position-relative overflow-hidden p-3 p-md-5 m-md-3 text-center bg-dark" style="color:white">
+        <div class="col-md-5 p-lg-5 mx-auto my-5">
+            <h1 class="display-4 font-weight-normal">What do they think?</h1>
+            <p class="lead font-weight-normal">Start by entering a game name below</p>
+            <form method="POST" class="form-register" style="color:white">
+                <br>
+                {{ form.hidden_tag() }}
+                {{ form.game(class="form-control", placeholder="Enter a game name") }}
+                <br>
+                {{ form.submit(class="btn btn-lg btn-block btn-primary") }}
+            </form>
+        </div>
+        <div class="product-device box-shadow d-none d-md-block"></div>
+        <div class="product-device product-device-2 box-shadow d-none d-md-block"></div>
+    </div>
+{% endblock %}
