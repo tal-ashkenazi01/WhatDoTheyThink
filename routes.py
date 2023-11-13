@@ -187,7 +187,7 @@ def logout_page():
 
 if __name__ == "__main__":
     from os import environ
-    app.run(port=environ.get("PORT", 8080))  #debug=True
+    app.run(host='0.0.0.0', port=environ.get("PORT", 8080))  #debug=True
 
 # BASIC USER AND PASSWORD
 # USERNAME: TA
