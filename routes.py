@@ -186,7 +186,7 @@ def logout_page():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=8080)
 
 # BASIC USER AND PASSWORD
 # USERNAME: TA
