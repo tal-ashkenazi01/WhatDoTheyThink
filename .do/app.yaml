@@ -1,0 +1,6 @@
+name: WhatDoTheyThink
+services:
+- name: web
+  github:
+    repo: talashkenazi01/WhatDoTheyThink
+    branch: main
