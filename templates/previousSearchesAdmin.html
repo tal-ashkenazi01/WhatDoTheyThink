@@ -7,7 +7,7 @@ Previous Searches
 <div class="row" style="margin-top:20px; margin-left:20px; margin-right:20px">
    <div class="col">
       <h2 style="text-align:center">
-          Search history
+          All User Search history
       </h2>
        <p style="text-align:center">
            Click on one to see the results
@@ -19,6 +19,7 @@ Previous Searches
                <tr>
                   <!-- Your Columns HERE -->
                   <th scope="col">ID</th>
+                  <th scope="col">Username</th>
                   <th scope="col">Date</th>
                   <th scope="col">Game</th>
                   <th scope="col">App ID</th>
@@ -30,6 +31,7 @@ Previous Searches
                {% include 'includes/display_modals.html' %}
                <tr>
                   <td>{{ query.query_id }}</td>
+                  <td>{{ query.user.username }}</td>
                   <td>{{ query.date }}</td>
                   <td>{{ query.game }}</td>
                   <td>{{ query.app_id }}</td>

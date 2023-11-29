@@ -13,6 +13,44 @@
                 {{ form.game(class="form-control", placeholder="Enter a game name") }}
                 <br>
                 {{ form.submit(class="btn btn-lg btn-block btn-primary") }}
+                {% if results %}
+                    <style>
+                      .modal-content {
+                        background-color: #212121;
+                        justify-content: center;
+                      }
+                    </style>
+
+                    <!-- Show Results -->
+                    <div class="modal fade show" id="Modal-ShowResults"
+                         tabindex="-1"
+                         aria-labelledby="exampleModalLabel" aria-hidden="true">
+                      <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                          <div class="modal-header justify-content-center">
+                            <h5 class="modal-title" id="ModalLabel">
+                              {{ game_name }}
+                            </h5>
+                          </div>
+                          <div class="modal-body d-flex justify-content-center" id="graph-results">
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary"
+                                    data-dismiss="modal">Close
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <script>
+                        $(document).ready(function() {
+                            let plotData = {{ results|safe }};
+                            Plotly.newPlot('graph-results', plotData.data, plotData.layout, plotData.config);
+                            $('#Modal-ShowResults').modal('show');
+                        });
+                      </script>
+                    </div>
+                {% endif %}
+
             </form>
         </div>
         <div class="product-device box-shadow d-none d-md-block"></div>
