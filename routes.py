@@ -127,6 +127,10 @@ def home_page():
             # GET THE APP ID FROM THE INPUT GAME NAME :
             game_name_search = requests.get(f"https://whatdotheythink.online/services/getIDs?gameName={game_name}")
             app_id_zipped = json.loads(game_name_search.content)
+
+            if "Error" in app_id_zipped:
+                flash("Could not find game with this title", 'danger')
+                return render_template("index.html", form=search_form, results=None, game_name=None)
             app_id = app_id_zipped["steamID"]
 
             response = requests.get(
@@ -256,9 +260,10 @@ def home_page():
             else:
                 flash(f'Sign in to save your searches', category='danger')
 
-            return render_template("index.html", form=search_form, results=pio.to_json(topic_analysis), game_name=game_name)
+            return render_template("index.html", form=search_form, results=pio.to_json(topic_analysis),
+                                   game_name=game_name)
     except:
-         flash(f"There was an error with retrieving given game data, please try again", category='danger')
+        flash(f"There was an error with retrieving given game data, please try again", category='danger')
 
     if search_form.errors != {}:  # if there are no errors from the validation
         for err_msg in search_form.errors.values():
