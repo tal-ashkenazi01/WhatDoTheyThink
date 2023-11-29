@@ -331,7 +331,7 @@ if __name__ == "__main__":
     import os
 
     port = int(os.getenv('PORT'))
-    app.run() # debug=True
+    app.run()  # debug=True
 
 # BASIC USER AND PASSWORD
 # USERNAME: TA
