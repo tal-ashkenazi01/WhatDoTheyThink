@@ -120,146 +120,145 @@ def home_page():
     search_form = SearchForm()
     topic_analysis = None
     game_name = "None"
-    # try:
-    if request.method == 'POST':
-        game_name = search_form.game.data
-        num_reviews = 300
-        # GET THE APP ID FROM THE INPUT GAME NAME :
-        game_name_search = requests.get(f"https://whatdotheythink.online/services/getIDs?gameName={game_name}")
-        app_id_zipped = json.loads(game_name_search.content)
-        app_id = app_id_zipped["steamID"]
+    try:
+        if request.method == 'POST':
+            game_name = search_form.game.data
+            num_reviews = 300
+            # GET THE APP ID FROM THE INPUT GAME NAME :
+            game_name_search = requests.get(f"https://whatdotheythink.online/services/getIDs?gameName={game_name}")
+            app_id_zipped = json.loads(game_name_search.content)
+            app_id = app_id_zipped["steamID"]
 
-        response = requests.get(
-            f"https://whatdotheythink.online/services/SteamReviews?appid={app_id}&reviewType=all&reviewNum={num_reviews}")
-        content = json.loads(response.content)
+            response = requests.get(
+                f"https://whatdotheythink.online/services/SteamReviews?appid={app_id}&reviewType=all&reviewNum={num_reviews}")
+            content = json.loads(response.content)
 
-        # THIS GETS THE REVIEWS AND THEIR TEXT
-        review_text = []
-        review_over_year = dict()
+            # THIS GETS THE REVIEWS AND THEIR TEXT
+            review_text = []
+            review_over_year = dict()
 
-        # NUMBER OF POSITIVE REVIEW IN THE FORMAT YEAR: NUM POSITIVE
-        positive_time_played = []
-        # NUMBER OF NEGATIVE REVIEWS IN THE FORMAT YEAR: NUM NEGATIVE
-        negative_time_played = []
+            # NUMBER OF POSITIVE REVIEW IN THE FORMAT YEAR: NUM POSITIVE
+            positive_time_played = []
+            # NUMBER OF NEGATIVE REVIEWS IN THE FORMAT YEAR: NUM NEGATIVE
+            negative_time_played = []
 
-        # # DEBUGGING
-        # app.logger.error(content[1])
+            # # DEBUGGING
+            # app.logger.error(content[1])
 
-        game_info = dict()
-        for review in content:
-            # FILTER OUT THE FIRST ENTRY WHICH IS GAME INFO
-            if "totalReviews" in review:
-                game_info = review
-            else:
-                dirty_review_text = review["reviewText"]
-                words = word_tokenize(dirty_review_text)
-                filtered_words = [word for word in words if word.lower() not in filler_words]
-                review_text.append(' '.join(filtered_words))
-
-                # APPEND IF THE REVIEWS ARE POSITIVE OR NEGATIVE
-                # THIS IS USED TO SEE IF THE MORE TIME PEOPLE SPEND ON THE GAME, THE MORE THEY ENJOY IT
-                if review["reviewPositive"]:
-                    time_in_game = review["reviewPlaytimeForever"] / 360
-                    positive_time_played.append(time_in_game)
+            game_info = dict()
+            for review in content:
+                # FILTER OUT THE FIRST ENTRY WHICH IS GAME INFO
+                if "totalReviews" in review:
+                    game_info = review
                 else:
-                    time_in_game = review["reviewPlaytimeForever"] / 360
-                    negative_time_played.append(time_in_game)
+                    dirty_review_text = review["reviewText"]
+                    words = word_tokenize(dirty_review_text)
+                    filtered_words = [word for word in words if word.lower() not in filler_words]
+                    review_text.append(' '.join(filtered_words))
 
-        # NORMALIZE BOTH THE NEGATIVE REVIEWS AND THE POSITIVE ONES TO REDUCE OUTLIERS
-        # CONVERT THE LISTS TO NP ARRAYS
-        post_processing_positive_reviews = np.array(positive_time_played)
-        post_processing_negative_reviews = np.array(negative_time_played)
+                    # APPEND IF THE REVIEWS ARE POSITIVE OR NEGATIVE
+                    # THIS IS USED TO SEE IF THE MORE TIME PEOPLE SPEND ON THE GAME, THE MORE THEY ENJOY IT
+                    if review["reviewPositive"]:
+                        time_in_game = review["reviewPlaytimeForever"] / 360
+                        positive_time_played.append(time_in_game)
+                    else:
+                        time_in_game = review["reviewPlaytimeForever"] / 360
+                        negative_time_played.append(time_in_game)
 
-        positive_reviews_time_played = post_processing_positive_reviews[
-            abs(post_processing_positive_reviews - np.mean(post_processing_positive_reviews)) < 2 * np.std(
-                post_processing_positive_reviews)]
-        negative_reviews_time_played = post_processing_negative_reviews[
-            abs(post_processing_negative_reviews - np.mean(post_processing_negative_reviews)) < 2 * np.std(
-                post_processing_negative_reviews)]
+            # NORMALIZE BOTH THE NEGATIVE REVIEWS AND THE POSITIVE ONES TO REDUCE OUTLIERS
+            # CONVERT THE LISTS TO NP ARRAYS
+            post_processing_positive_reviews = np.array(positive_time_played)
+            post_processing_negative_reviews = np.array(negative_time_played)
 
-        # SEPARATE CODE FOR THE NON-NEGATIVE MATRIX FACTORIZATION
-        vectorizer = TfidfVectorizer(stop_words='english', max_df=.97, min_df=.025)
-        X = vectorizer.fit_transform(review_text)
-        nmf = NMF(n_components=10, init='random').fit(X)
-        feature_names = vectorizer.get_feature_names_out()
+            positive_reviews_time_played = post_processing_positive_reviews[
+                abs(post_processing_positive_reviews - np.mean(post_processing_positive_reviews)) < 2 * np.std(
+                    post_processing_positive_reviews)]
+            negative_reviews_time_played = post_processing_negative_reviews[
+                abs(post_processing_negative_reviews - np.mean(post_processing_negative_reviews)) < 2 * np.std(
+                    post_processing_negative_reviews)]
 
-        # FIND THE FIVE MOST IMPORTANT WORDS
-        num_words_to_use = 5
-        top_words = {}
-        for topicID, filter in enumerate(nmf.components_):
-            top_features_index = filter.argsort()[: -num_words_to_use - 1: -1]
-            top_filter_words = [feature_names[i] for i in top_features_index]
-            weights = filter[top_features_index]
-            top_words[f"Topic {topicID}"] = [top_filter_words, weights]
+            # SEPARATE CODE FOR THE NON-NEGATIVE MATRIX FACTORIZATION
+            vectorizer = TfidfVectorizer(stop_words='english', max_df=.97, min_df=.025)
+            X = vectorizer.fit_transform(review_text)
+            nmf = NMF(n_components=10, init='random').fit(X)
+            feature_names = vectorizer.get_feature_names_out()
 
-        subplot_titles = ["Positive/Negative<br>Review Ratio",
-                          "Average Time Played for<br>Positive/Negative Reviews"]
-        subplot_titles.extend([k[0][0] for k in top_words.values()])
+            # FIND THE FIVE MOST IMPORTANT WORDS
+            num_words_to_use = 5
+            top_words = {}
+            for topicID, filter in enumerate(nmf.components_):
+                top_features_index = filter.argsort()[: -num_words_to_use - 1: -1]
+                top_filter_words = [feature_names[i] for i in top_features_index]
+                weights = filter[top_features_index]
+                top_words[f"Topic {topicID}"] = [top_filter_words, weights]
 
-        # MAKE THE GRID PATTER FOR THE SUBPLOTS
-        specs = [
-            [{"type": "domain", "rowspan": 2, "colspan": 2}, None, {"type": "xy", "colspan": 3, "rowspan": 2}, None,
-             None],  # Row 1
-            [None, None, None, None, None],
-            [{"type": "xy"}, {"type": "xy"}, {"type": "xy"}, {"type": "xy"}, {"type": "xy"}],  # Row 3
-            [{"type": "xy"}, {"type": "xy"}, {"type": "xy"}, {"type": "xy"}, {"type": "xy"}],  # Row 4
-        ]
+            subplot_titles = ["Positive/Negative<br>Review Ratio",
+                              "Average Time Played for<br>Positive/Negative Reviews"]
+            subplot_titles.extend([k[0][0] for k in top_words.values()])
 
-        # MAKE THE BROADER SUBPLOT
-        topic_analysis = make_subplots(rows=4, cols=5, subplot_titles=subplot_titles,
-                                       shared_yaxes="rows", specs=specs, vertical_spacing=0.1)
+            # MAKE THE GRID PATTER FOR THE SUBPLOTS
+            specs = [
+                [{"type": "domain", "rowspan": 2, "colspan": 2}, None, {"type": "xy", "colspan": 3, "rowspan": 2}, None,
+                 None],  # Row 1
+                [None, None, None, None, None],
+                [{"type": "xy"}, {"type": "xy"}, {"type": "xy"}, {"type": "xy"}, {"type": "xy"}],  # Row 3
+                [{"type": "xy"}, {"type": "xy"}, {"type": "xy"}, {"type": "xy"}, {"type": "xy"}],  # Row 4
+            ]
 
-        # AVERAGE TIME SPENT IN GAME BY POSITIVE REVIEWS
-        positive_review_box_plot = go.Box(x=positive_reviews_time_played, name="Positive", hoverinfo='x')
-        topic_analysis.add_trace(positive_review_box_plot, row=1, col=3)
+            # MAKE THE BROADER SUBPLOT
+            topic_analysis = make_subplots(rows=4, cols=5, subplot_titles=subplot_titles,
+                                           shared_yaxes="rows", specs=specs, vertical_spacing=0.1)
 
-        # AVERAGE TIME SPENT IN GAME BY NEGATIVE REVIEWS
-        negative_review_box_plot = go.Box(x=negative_reviews_time_played, name="Negative", hoverinfo='x')
-        topic_analysis.add_trace(negative_review_box_plot, row=1, col=3)
+            # AVERAGE TIME SPENT IN GAME BY POSITIVE REVIEWS
+            positive_review_box_plot = go.Box(x=positive_reviews_time_played, name="Positive", hoverinfo='x')
+            topic_analysis.add_trace(positive_review_box_plot, row=1, col=3)
 
-        # SHARED ATTRIBUTES
-        topic_analysis.update_xaxes(title_text="Time (hours)", row=1, col=3)
-        topic_analysis.update_yaxes(dict(tickangle=-90), row=1, col=3)
+            # AVERAGE TIME SPENT IN GAME BY NEGATIVE REVIEWS
+            negative_review_box_plot = go.Box(x=negative_reviews_time_played, name="Negative", hoverinfo='x')
+            topic_analysis.add_trace(negative_review_box_plot, row=1, col=3)
 
-        # ADD THE PLOT THAT CONTAINS THE PIE CHART
-        ratio_pie_chart = go.Pie(values=[len(positive_reviews_time_played), len(negative_reviews_time_played)],
-                                 labels=["Positive", "Negative"],
-                                 hoverinfo='label+percent',
-                                 text=["Positive", "Negative"])  # , textinfo='none'
-        topic_analysis.add_trace(ratio_pie_chart, row=1, col=1)
+            # SHARED ATTRIBUTES
+            topic_analysis.update_xaxes(title_text="Time (hours)", row=1, col=3)
+            topic_analysis.update_yaxes(dict(tickangle=-90), row=1, col=3)
 
-        row = 3
-        col = 1
-        for key in top_words.keys():
-            if col == 6:
-                col = 1
-                row += 1
-            if (5 * (row - 1) + col) > 20:
-                topic_analysis.add_trace(go.Bar(name=""), row, col)
+            # ADD THE PLOT THAT CONTAINS THE PIE CHART
+            ratio_pie_chart = go.Pie(values=[len(positive_reviews_time_played), len(negative_reviews_time_played)],
+                                     labels=["Positive", "Negative"],
+                                     hoverinfo='label+percent',
+                                     text=["Positive", "Negative"])  # , textinfo='none'
+            topic_analysis.add_trace(ratio_pie_chart, row=1, col=1)
+
+            row = 3
+            col = 1
+            for key in top_words.keys():
+                if col == 6:
+                    col = 1
+                    row += 1
+                if (5 * (row - 1) + col) > 20:
+                    topic_analysis.add_trace(go.Bar(name=""), row, col)
+                else:
+                    topic_analysis.add_trace(go.Bar(name=key, x=top_words[key][0], y=top_words[key][1]), row, col)
+                col += 1
+
+            topic_analysis.update_layout(showlegend=False)
+            topic_analysis.update_traces(dict(marker_coloraxis=None), row=row, col=1)
+            topic_analysis.update_layout(height=1500, width=1000)
+            topic_analysis.update_layout(template='plotly_dark')
+
+            if current_user.is_authenticated:
+                current_datetime = datetime.now()
+                readable_datetime = current_datetime.strftime("%I:%M%p, %B %d, %Y")
+                new_query = Query(user_id=current_user.id, date=readable_datetime, game=game_name, app_id=app_id,
+                                  results=pio.to_json(topic_analysis))
+                db.session.add(new_query)
+                db.session.commit()
+                flash(f'Added search to history', category='success')
             else:
-                topic_analysis.add_trace(go.Bar(name=key, x=top_words[key][0], y=top_words[key][1]), row, col)
-            col += 1
+                flash(f'Sign in to save your searches', category='danger')
 
-        topic_analysis.update_layout(showlegend=False)
-        topic_analysis.update_traces(dict(marker_coloraxis=None), row=row, col=1)
-        topic_analysis.update_layout(height=1500, width=1000)
-        topic_analysis.update_layout(template='plotly_dark')
-
-        if current_user.is_authenticated:
-            current_datetime = datetime.now()
-            readable_datetime = current_datetime.strftime("%I:%M%p, %B %d, %Y")
-            new_query = Query(user_id=current_user.id, date=readable_datetime, game=game_name, app_id=app_id,
-                              results=pio.to_json(topic_analysis))
-            db.session.add(new_query)
-            db.session.commit()
-            flash(f'Added search to history', category='success')
-        else:
-            flash(f'Sign in to save your searches', category='danger')
-
-        return render_template("index.html", form=search_form, results=pio.to_json(topic_analysis), game_name=game_name)
-
-    # except:
-    #     flash(f"There was an error with retrieving given game data, please try again", category='danger')
+            return render_template("index.html", form=search_form, results=pio.to_json(topic_analysis), game_name=game_name)
+    except:
+         flash(f"There was an error with retrieving given game data, please try again", category='danger')
 
     if search_form.errors != {}:  # if there are no errors from the validation
         for err_msg in search_form.errors.values():
@@ -328,9 +327,9 @@ def logout_page():
 
 
 if __name__ == "__main__":
-    import os
-
-    port = int(os.getenv('PORT'))
+    # import os
+    #
+    # port = int(os.getenv('PORT'))
     app.run()  # debug=True
 
 # BASIC USER AND PASSWORD
