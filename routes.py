@@ -125,7 +125,7 @@ def home_page():
             game_name = search_form.game.data
             num_reviews = 300
             # GET THE APP ID FROM THE INPUT GAME NAME :
-            game_name_search = requests.get(f"https://whatdotheythink.online/services/getIDs?gameName={game_name}")
+            game_name_search = requests.get(f"https://whatdotheythink.online/services/getIDs?gameName={game_name}", timeout=60)
             app_id_zipped = json.loads(game_name_search.content)
 
             if "Error" in app_id_zipped:
@@ -134,7 +134,7 @@ def home_page():
             app_id = app_id_zipped["steamID"]
 
             response = requests.get(
-                f"https://whatdotheythink.online/services/SteamReviews?appid={app_id}&reviewType=all&reviewNum={num_reviews}")
+                f"https://whatdotheythink.online/services/SteamReviews?appid={app_id}&reviewType=all&reviewNum={num_reviews}", timeout=60)
             content = json.loads(response.content)
 
             # THIS GETS THE REVIEWS AND THEIR TEXT
