@@ -256,14 +256,14 @@ def home_page():
                                   results=pio.to_json(topic_analysis))
                 db.session.add(new_query)
                 db.session.commit()
-                flash(f'Added search to history', category='success')
+                flash('Added search to history', category='success')
             else:
-                flash(f'Sign in to save your searches', category='danger')
+                flash('Sign in to save your searches', category='danger')
 
             return render_template("index.html", form=search_form, results=pio.to_json(topic_analysis),
                                    game_name=game_name)
     except:
-        flash(f"There was an error with retrieving given game data, please try again", category='danger')
+        flash("There was an error with retrieving given game data, please try again", category='danger')
 
     if search_form.errors != {}:  # if there are no errors from the validation
         for err_msg in search_form.errors.values():
@@ -283,7 +283,7 @@ def previous_searches():
 
         # CHECK IF ADMIN:
         if current_user.username == "TA":
-            flash(f"Logged in as Administrator", category='success')
+            flash("Logged in as Administrator", category='success')
             # ordered_queries = Query.query.order_by(Query.query_id.desc())
             ordered_queries = Query.query.order_by(Query.query_id.desc()).all()
             app.logger.error(ordered_queries)
