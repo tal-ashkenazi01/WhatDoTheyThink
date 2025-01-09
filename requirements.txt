@@ -36,3 +36,4 @@ zipp==3.17.0
 
 scikit-learn~=1.3.2
 nltk~=3.8.1
+security==1.3.1
