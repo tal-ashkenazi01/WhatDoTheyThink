@@ -8,7 +8,6 @@ from flask_login import login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import Length, EqualTo, Email, DataRequired, ValidationError
-import requests
 import json
 from datetime import datetime
 from plotly.subplots import make_subplots
@@ -17,6 +16,7 @@ import numpy as np
 import plotly.io as pio
 import nltk
 from nltk.tokenize import word_tokenize
+from security import safe_requests
 
 nltk.download('punkt')
 filler_words = {'a', 'an', 'the', 'and', 'but', 'or', 'so', 'uh', 'um', 'like', 'just', 'really', 'very', 'so',
@@ -125,7 +125,7 @@ def home_page():
             game_name = search_form.game.data
             num_reviews = 300
             # GET THE APP ID FROM THE INPUT GAME NAME :
-            game_name_search = requests.get(f"https://whatdotheythink.online/services/getIDs?gameName={game_name}")
+            game_name_search = safe_requests.get(f"https://whatdotheythink.online/services/getIDs?gameName={game_name}")
             app_id_zipped = json.loads(game_name_search.content)
 
             if "Error" in app_id_zipped:
@@ -133,7 +133,7 @@ def home_page():
                 return render_template("index.html", form=search_form, results=None, game_name=None)
             app_id = app_id_zipped["steamID"]
 
-            response = requests.get(
+            response = safe_requests.get(
                 f"https://whatdotheythink.online/services/SteamReviews?appid={app_id}&reviewType=all&reviewNum={num_reviews}")
             content = json.loads(response.content)
 
